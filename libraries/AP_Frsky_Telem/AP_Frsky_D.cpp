@@ -48,48 +48,48 @@ void AP_Frsky_D::send(void)
 {
     const AP_BattMonitor &_battery = AP::battery();
     uint32_t now = AP_HAL::millis();
-    // send frame1 every 200ms
-    if (now - _D.last_200ms_frame >= 200) {
-        _D.last_200ms_frame = now;
+    
+    // send fast FRAME1
+    if (now - _D.last_fast_frame >= FAST_FRAME_INTERVAL) {
+        _D.last_fast_frame = now;
 
-        send_uint16(DATA_ID_ACC_X, (uint16_t)(0x0001)); // send altitude integer part
-        send_uint16(DATA_ID_ACC_Y, (uint16_t)(0x0002)); // send altitude integer part
-        send_uint16(DATA_ID_ACC_Z, (uint16_t)(0x0003)); // send altitude integer part
+        // // ACC data 
+        // send_uint16(DATA_ID_ACC_X, (uint16_t)(0x0001)); 
+        // send_uint16(DATA_ID_ACC_Y, (uint16_t)(0x0002)); 
+        // send_uint16(DATA_ID_ACC_Z, (uint16_t)(0x0003)); 
 
         calc_nav_alt();
-        send_uint16(DATA_ID_BARO_ALT_BP, _SPort_data.alt_nav_meters); // send nav altitude integer part
-        send_uint16(DATA_ID_BARO_ALT_AP, _SPort_data.alt_nav_cm); // send nav altitude decimal part
+        send_uint16(DATA_ID_BARO_ALT_BP, _SPort_data.alt_nav_meters);       // send nav altitude integer part
+        send_uint16(DATA_ID_BARO_ALT_AP, _SPort_data.alt_nav_cm);           // send nav altitude decimal part
 
-        send_uint16(DATA_ID_TEMP1, gcs().custom_mode()); // send flight mode
+        send_uint16(DATA_ID_TEMP1, gcs().custom_mode());                    // send flight mode
         send_uint16(DATA_ID_TEMP2, (uint16_t)(AP::gps().num_sats() * 10 + AP::gps().status())); // send GPS status and number of satellites as num_sats*10 + status (to fit into a uint8_t)
 
         //send per cell voltages
         uint8_t cells_count = 3;
         for (uint8_t i = 0; i < cells_count; i++) {
-            uint16_t cell_id_volts = 0x1000*(i)+(_battery.voltage()/cells_count/4.2*0x0834); 
-            cell_id_volts = (cell_id_volts >> 8) | (cell_id_volts << 8); //swap bytes
-            send_uint16(DATA_ID_VOLTS, (uint16_t)cell_id_volts);        // send hours & mins  
+            uint16_t cell_id_volts = 0x1000*(i)+(_battery.voltage()/cells_count/4.2*0x0834); //magic number 0x0834 = 2100 
+            cell_id_volts = (cell_id_volts >> 8) | (cell_id_volts << 8);    //swap bytes
+            send_uint16(DATA_ID_VOLTS, (uint16_t)cell_id_volts);            // send hours & mins  
         }
 
         //send voltage/current sensor
-        float current;
-        if (!_battery.current_amps(current)) {
-            current = 0;
-        }
+        // float current;
+        // if (!_battery.current_amps(current)) {
+        //     current = 0;
+        // }
         // send_uint16(DATA_ID_CURRENT, (uint16_t)roundf(current * 10.0f)); // send current consumption
-        send_uint16(DATA_ID_CURRENT, (uint16_t)(14));      
-        send_uint16(DATA_ID_VOLTAGE_BP, (uint16_t)(12));   
-        send_uint16(DATA_ID_VOLTAGE_AP, (uint16_t)(13));   
         
-
-        send_uint16(DATA_ID_RPM, (uint16_t)(0x1002));              
-
-        //last FRAME1 data
+        send_uint16(DATA_ID_CURRENT, (uint16_t)(20));      
+        send_uint16(DATA_ID_VOLTAGE_BP, (uint16_t)(10));   
+        send_uint16(DATA_ID_VOLTAGE_AP, (uint16_t)(30));   
+        
+        //end FRAME1 data
         
     }
-    // send frame2 every second
-    if (now - _D.last_1000ms_frame >= 1000) {
-        _D.last_1000ms_frame = now;
+    // send mid FRAME2
+    if (now - _D.last_mid_frame >= MID_FRAME_INTERVAL) {
+        _D.last_mid_frame = now;
 
         AP_AHRS &_ahrs = AP::ahrs();        
         send_uint16(DATA_ID_GPS_COURS_BP, (uint16_t)((_ahrs.yaw_sensor / 100) % 360));  // send heading in degree based on AHRS and not GPS
@@ -121,33 +121,36 @@ void AP_Frsky_D::send(void)
 
     }
   
+  
+  
+    // send slow FRAME3
 
-    // send frame3 every given  msec
-
-    // const AP_Vehicle *vehicle = AP::vehicle();
-    
+    // const AP_Vehicle *vehicle = AP::vehicle();   
     // if ((vehicle != nullptr) && vehicle->get_time_flying_ms() && (now - _D.last_5000ms_frame >= 5000)) {
+    if ((now - _D.last_slow_frame >= SLOW_FRAME_INTERVAL)) {
 
+        _D.last_slow_frame = now;
 
-    if ((now - _D.last_2000ms_frame >= 2000)) {
+        // send date - not used
+        // send_uint16(DATA_ID_DAY_MONTH, (uint16_t)(0x0101));             // 01.01        
+        // send_uint16(DATA_ID_YEAR_0, (uint16_t)(0x01));                  // 2001
 
-        _D.last_2000ms_frame = now;
         
         // uint32_t time_flying_s = vehicle->get_time_flying_ms()/1000;                
         // uint32_t time_flying_s = 4000;                
-        uint32_t time_flying_s = now/1000;                
+        uint32_t time_flying_s = now/1000;                              
         
-        uint8_t time_flying_h = (uint8_t)time_flying_s/3600;            // time since arming - hours
+        uint8_t time_flying_h = (uint8_t)time_flying_s/3600;            // time since start in hours
         uint8_t time_flying_m = (uint8_t)(time_flying_s % 3600)/60;     // minutes        
         time_flying_s = (uint8_t)time_flying_s % 60;                    // seconds
 
-        //send date        
-        send_uint16(DATA_ID_DAY_MONTH, (uint16_t)(0x0101));             // 01.01        
-        send_uint16(DATA_ID_YEAR_0, (uint16_t)(0x01));                  // 2001
-        
+       
         //  send time
         send_uint16(DATA_ID_HOURS_MINUTE, (uint16_t)((time_flying_m << 8) | time_flying_h));    // send hours & mins       
-        send_uint16(DATA_ID_SECONDS_0, (uint16_t)(time_flying_s));                              // send hours & mins  
+        send_uint16(DATA_ID_SECONDS_0, (uint16_t)(time_flying_s));                              // seconds
+
+       
+        send_uint16(DATA_ID_RPM, (uint16_t)(0xFFFF));              
         
     }
 
