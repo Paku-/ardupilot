@@ -103,6 +103,7 @@ protected:
     static const uint8_t DATA_ID_GPS_SPEED_AP      = 0x19;
     static const uint8_t DATA_ID_GPS_LONG_AP       = 0x1A;
     static const uint8_t DATA_ID_GPS_LAT_AP        = 0x1B;
+    static const uint8_t DATA_ID_GPS_COURS_AP      = 0x1C;
     static const uint8_t DATA_ID_BARO_ALT_AP       = 0x21;
     static const uint8_t DATA_ID_GPS_LONG_EW       = 0x22;
     static const uint8_t DATA_ID_GPS_LAT_NS        = 0x23;
