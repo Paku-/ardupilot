@@ -86,25 +86,46 @@ void AP_Frsky_D::send(void)
         }
     }
 
-    // send frame3 every 5 seconds
+    // send frame3 every given  msec
 
-    const AP_Vehicle *vehicle = AP::vehicle();
+    // const AP_Vehicle *vehicle = AP::vehicle();
     
-    if ((vehicle != nullptr) && vehicle->get_time_flying_ms() && (now - _D.last_5000ms_frame >= 5000)) {
-        
-        _D.last_5000ms_frame = now;
-        
-        uint32_t time_flying_s = vehicle->get_time_flying_ms()/1000;                
-        
-        uint8_t time_flying_h = (uint8_t)time_flying_s/3600;                // time since arming - hours
-        uint8_t time_flying_m = (uint8_t)(time_flying_s % 3600)/60;         // minutes        
-        time_flying_s = (uint8_t)time_flying_s % 60;                // seconds
-        
-        send_uint16(DATA_ID_DAY_MONTH, (uint16_t)(0x0101));       // 01.01        
-        send_uint16(DATA_ID_YEAR_0, (uint16_t)(0x01));            // 2001
-        send_uint16(DATA_ID_HOURS_MINUTE, (uint16_t)(time_flying_m*0xFF+time_flying_h)); // send hours & mins       
-        send_uint16(DATA_ID_SECONDS_0, (uint16_t)(time_flying_s)); // send hours & mins       
+    // if ((vehicle != nullptr) && vehicle->get_time_flying_ms() && (now - _D.last_5000ms_frame >= 5000)) {
 
+
+    if ((now - _D.last_2000ms_frame >= 2000)) {
+
+        
+        _D.last_2000ms_frame = now;
+        
+        // uint32_t time_flying_s = vehicle->get_time_flying_ms()/1000;                
+        // uint32_t time_flying_s = 4000;                
+        uint32_t time_flying_s = now/1000;                
+        
+        uint8_t time_flying_h = (uint8_t)time_flying_s/3600;            // time since arming - hours
+        uint8_t time_flying_m = (uint8_t)(time_flying_s % 3600)/60;     // minutes        
+        time_flying_s = (uint8_t)time_flying_s % 60;                    // seconds
+
+        // //send date        
+        // send_uint16(DATA_ID_DAY_MONTH, (uint16_t)(0x0101));             // 01.01        
+        // send_uint16(DATA_ID_YEAR_0, (uint16_t)(0x01));                  // 2001
+        
+        //  send time
+        send_uint16(DATA_ID_HOURS_MINUTE, (uint16_t)((time_flying_m << 8) | time_flying_h));   // send hours & mins       
+        send_uint16(DATA_ID_SECONDS_0, (uint16_t)(time_flying_s));      // send hours & mins  
+
+        // //send voltage/current sensor data
+        // send_uint16(DATA_ID_VOLTAGE_BP, (uint16_t)(12));   // send hours & mins       
+        // send_uint16(DATA_ID_VOLTAGE_AP, (uint16_t)(13));   // send hours & mins       
+        // send_uint16(DATA_ID_CURRENT, (uint16_t)(14));      // send hours & mins  
+
+        //send per cell voltages
+        uint8_t cells_count = 3;
+        for (uint8_t i = 0; i < cells_count; i++) {
+            uint16_t cell_id_volts = 0x1000*(i)+(_battery.voltage()/cells_count/4.2*0x0834); 
+            cell_id_volts = (cell_id_volts >> 8) | (cell_id_volts << 8); //swap bytes
+            send_uint16(DATA_ID_VOLTS, (uint16_t)cell_id_volts);        // send hours & mins  
+        }
         
     }
 
