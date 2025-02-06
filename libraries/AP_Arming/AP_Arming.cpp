@@ -89,7 +89,7 @@
 // whether the parameter should be shown:
 #ifndef AP_ARMING_NEED_LOC_PARAMETER_ENABLED
 // determine whether ARMING_NEED_POS is shown:
-#if APM_BUILD_COPTER_OR_HELI
+#if APM_BUILD_COPTER_OR_HELI || APM_BUILD_TYPE(APM_BUILD_Rover)
 #define AP_ARMING_NEED_LOC_PARAMETER_ENABLED 1
 #else
 #define AP_ARMING_NEED_LOC_PARAMETER_ENABLED 0
@@ -98,7 +98,7 @@
 
 // if ARMING_NEED_POS is shown, determine what its default should be:
 #if AP_ARMING_NEED_LOC_PARAMETER_ENABLED
-#if APM_BUILD_COPTER_OR_HELI
+#if APM_BUILD_COPTER_OR_HELI || APM_BUILD_TYPE(APM_BUILD_Rover)
 #define AP_ARMING_NEED_LOC_DEFAULT 0
 #else
 #error "Unable to find value for AP_ARMING_NEED_LOC_DEFAULT"
@@ -191,7 +191,7 @@ const AP_Param::GroupInfo AP_Arming::var_info[] = {
     // @DisplayName: Require vehicle location
     // @Description: Require that the vehicle have an absolute position before it arms.  This can help ensure that the vehicle can Return To Launch.
     // @User: Advanced
-    // @Values{Copter}: 0:Do not require location,1:Require Location
+    // @Values{Copter,Rover}: 0:Do not require location,1:Require Location
     AP_GROUPINFO("NEED_LOC", 12, AP_Arming, require_location, float(AP_ARMING_NEED_LOC_DEFAULT)),
 #endif  // AP_ARMING_NEED_LOC_PARAMETER_ENABLED
 
