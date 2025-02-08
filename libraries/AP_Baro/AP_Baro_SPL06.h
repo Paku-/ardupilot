@@ -59,7 +59,7 @@ private:
     uint32_t _pressure_count;
     float _temperature;
     
-    uint8_t _state = 0; // SPL06 driver state register
+    uint8_t _state = 0; // SPL06 driver state register - not used yet
 
     // Internal calibration registers
     int32_t _c00, _c10;
