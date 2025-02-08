@@ -48,6 +48,7 @@ private:
     void _update_pressure(int32_t);
 
     int32_t raw_value_scale_factor(uint8_t);
+    bool get_calib_coeefs(void);
 
     AP_HAL::OwnPtr<AP_HAL::Device> _dev;
 
@@ -57,8 +58,8 @@ private:
     float _pressure_sum;
     uint32_t _pressure_count;
     float _temperature;
-    //Driver state register
-    uint8_t _state;
+    
+    uint8_t _state = 0; // SPL06 driver state register
 
     // Internal calibration registers
     int32_t _c00, _c10;
