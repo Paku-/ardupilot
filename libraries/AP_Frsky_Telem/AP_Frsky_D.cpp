@@ -4,7 +4,14 @@
 
 #include <AP_AHRS/AP_AHRS.h>
 #include <GCS_MAVLink/GCS.h>
-
+#include <AP_Baro/AP_Baro.h>
+#include <AP_BattMonitor/AP_BattMonitor.h>
+#include <AP_GPS/AP_GPS.h>
+#include <AP_AHRS/AP_AHRS.h>
+#include <AP_RPM/AP_RPM.h>
+#include <AP_Vehicle/AP_Vehicle.h>
+#include <AP_RCTelemetry/AP_RCTelemetry.h>
+#include <GCS_MAVLink/GCS.h>
 
 /*
   send 1 byte and do byte stuffing
@@ -141,11 +148,13 @@ void AP_Frsky_D::send(void)
         send_uint16(DATA_ID_HOURS_MINUTE, (uint16_t)((_SPort_data.minutes << 8) | _SPort_data.hours));    // send hours & mins       
         send_uint16(DATA_ID_SECONDS_0, (uint16_t)(_SPort_data.seconds));                                  // seconds
 
-        uint8_t inst = 0;
-        calc_rpm(inst,_SPort_data.rpm);
+        // uint8_t inst = 0;
+        // calc_rpm(inst,_SPort_data.rpm);
 
-        // _SPort_data.rpm = 9999; //hardcoded for now
-       
+        // const auto &baro = AP::baro();
+        _SPort_data.rpm = (uint16_t)AP::baro().get_altitude(); // for testing     
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro:  %0.2f",(double)(_SPort_data.rpm));
+                
         send_uint16(DATA_ID_RPM, (uint16_t)(_SPort_data.rpm));              
         
     }
