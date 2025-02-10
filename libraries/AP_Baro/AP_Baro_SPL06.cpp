@@ -43,25 +43,26 @@ extern const AP_HAL::HAL &hal;
 #define SPL06_REG_INT_AND_FIFO_CFG             0x09    // Interrupt and FIFO config
 #define SPL06_REG_INT_STATUS                   0x0A    // Interrupt and FIFO config
 #define SPL06_REG_FIFO_STATUS                  0x0B    // Interrupt and FIFO config
-#define SPL06_REG_RST                          0x0C    // Softreset Register
+#define SPL06_REG_SOFT_RESET                   0x0C    // Softreset Register
 #define SPL06_REG_CHIP_ID                      0x0D    // Chip ID Register
 #define SPL06_REG_CALIB_COEFFS_START           0x10
 #define SPL06_REG_CALIB_COEFFS_END             0x21
 #define SPA06_REG_CALIB_COEFFS_END             0x24
 
-// PRESSURE_CFG_REG
-#define SPL06_PRES_RATE_16HZ				   (0x04 << 4)
-#define SPL06_PRES_RATE_32HZ				   (0x05 << 4)
+#define SPL06_OVERSAMPLING_TO_REG_VALUE(n)     (ffs(n)-1)
+#define SPL06_MESSURE_RATE_TO_REG_VALUE(n)     (ffs(n)-1)
 
 // TEMPERATURE_CFG_REG
 #define SPL06_TEMP_USE_EXT_SENSOR              (1<<7)
-#define SPL06_TEMP_RATE_16HZ				   (0x04 << 4)
-#define SPL06_TEMP_RATE_32HZ				   (0x05 << 4)
 
 // MODE_AND_STATUS_REG
 #define SPL06_MEAS_PRESSURE                    (1<<0)  // measure pressure
 #define SPL06_MEAS_TEMPERATURE                 (1<<1)  // measure temperature
 #define SPL06_MEAS_CON_PRE_TEM				   0x07
+
+// FIFO & RESET Register
+#define SPL06_CMD_SOFT_RESET                   0x09
+#define SPL06_CMD_FLASH_FIFO                   (1<<7)
 
 #define SPL06_MEAS_CFG_CONTINUOUS              (1<<2)
 #define SPL06_MEAS_CFG_PRESSURE_RDY            (1<<4)
@@ -73,19 +74,50 @@ extern const AP_HAL::HAL &hal;
 #define SPL06_PRESSURE_RESULT_BIT_SHIFT        (1<<2)  // necessary for pressure oversampling > 8
 #define SPL06_TEMPERATURE_RESULT_BIT_SHIFT     (1<<3)  // necessary for temperature oversampling > 8
 
-// Don't set oversampling higher than 8 or the measurement time will be higher than 20ms (timer period)
-#define SPL06_PRESSURE_OVERSAMPLING            64     // 16 is defined as std.
-#define SPL06_TEMPERATURE_OVERSAMPLING         64      // 16 is defined as std.
 
-#define SPL06_OVERSAMPLING_TO_REG_VALUE(n)     (ffs(n)-1)
+// Here comes the main configuration for the sensor
+
+// Take care of measurement time, it may be longer than the MODE_POLLING_RATE, so not all measurements will fit/be done in one cycle
+// Advised cfg register values are: pressure 0x26, temp 0xA0 for high precision and rate in background mode
+
+
+// // USER Precision mode 
+// #define SPL06_PRESSURE_OVERSAMPLING            32     
+// #define SPL06_TEMPERATURE_OVERSAMPLING         4
+// #define SPL06_PRESSURE_MEASURE_RATE            16 
+// #define SPL06_TEMPERATURE_MEASURE_RATE         2
+
+// // HIGH Precision mode (5cm, 4 per sec rate, 200uA power)
+// #define SPL06_PRESSURE_OVERSAMPLING            64     
+// #define SPL06_TEMPERATURE_OVERSAMPLING         4
+// // per second while in background mode
+// #define SPL06_PRESSURE_MEASURE_RATE            4 
+// #define SPL06_TEMPERATURE_MEASURE_RATE         1
+
+
+// STANDARD Precision mode (10cm, 2 per sec rate, 30uA power)
+#define SPL06_PRESSURE_OVERSAMPLING            16     
+#define SPL06_TEMPERATURE_OVERSAMPLING         1
+#define SPL06_PRESSURE_MEASURE_RATE            2  
+#define SPL06_TEMPERATURE_MEASURE_RATE         1
+
+// // Low Power mode (5 pascals, 1 per sec rate, 6uA power)
+// #define SPL06_PRESSURE_OVERSAMPLING            2     
+// #define SPL06_TEMPERATURE_OVERSAMPLING         1
+// #define SPL06_PRESSURE_MEASURE_RATE            4 
+// #define SPL06_TEMPERATURE_MEASURE_RATE         1
+
+
 
 #define SPL06_BACKGROUND_MODE_POLLING_RATE	   50 * AP_USEC_PER_MSEC
 #define SPL06_COMMAND_MODE_POLLING_RATE	       50 * AP_USEC_PER_MSEC
 
-// Enable Background Mode for continuous measurement
+// Enable Background Mode for continuous measurement - default mode
 #ifndef AP_BARO_SPL06_BACKGROUND_ENABLE
 #define AP_BARO_SPL06_BACKGROUND_ENABLE 1
 #endif
+
+// Sensor driver configuration ends here
 
 AP_Baro_SPL06::AP_Baro_SPL06(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> dev)
     : AP_Baro_Backend(baro)
@@ -121,29 +153,41 @@ bool AP_Baro_SPL06::_init()
 
     _dev->set_speed(AP_HAL::Device::SPEED_HIGH);
 
+    // chip reset
+    _dev->write_register(SPL06_REG_SOFT_RESET, SPL06_CMD_SOFT_RESET, true);    
 
     uint8_t meas_cfg;
     uint32_t time = AP_HAL::millis();
 
     do {    
-        _dev->read_registers(SPL06_REG_MODE_AND_STATUS,&meas_cfg, sizeof(meas_cfg));  
-        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: Reg check loop.");      
-    } while ((AP_HAL::millis() - time < 200) && !(meas_cfg & SPL06_MEAS_CFG_COEFFS_RDY));
+        _dev->read_registers(SPL06_REG_MODE_AND_STATUS,&meas_cfg, sizeof(meas_cfg));          
+    } while ((AP_HAL::millis() - time < 150) && !(meas_cfg & (SPL06_MEAS_CFG_COEFFS_RDY)));
 
-    if (!(meas_cfg & SPL06_MEAS_CFG_COEFFS_RDY)) return false; // calibration data not ready for long time, quit init()
+    if (!(meas_cfg & SPL06_MEAS_CFG_COEFFS_RDY)){
+        GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "Baro Failure: Calibration data not ready");      
+        return false; // calibration data not ready for to long time, quit init()
+    }
     
-    if (!get_calib_coeefs()) return false; // chip id failed?
+    if (!get_calib_coeefs())
+    {
+        GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "Baro Failure: Calibration data read failed");
+        return false; // chip id failed?  
+    }
+
+    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro Init: SPL06");
 
     // setup temperature and pressure measurements
     _dev->setup_checked_registers(3, 20);
 
 #if AP_BARO_SPL06_BACKGROUND_ENABLE
     //set rate and oversampling
-	// _dev->write_register(SPL06_REG_TEMPERATURE_CFG, SPL06_TEMP_RATE_32HZ | SPL06_OVERSAMPLING_TO_REG_VALUE(SPL06_TEMPERATURE_OVERSAMPLING), true);
-	// _dev->write_register(SPL06_REG_PRESSURE_CFG, SPL06_PRES_RATE_32HZ | SPL06_OVERSAMPLING_TO_REG_VALUE(SPL06_PRESSURE_OVERSAMPLING), true);	
-    _dev->write_register(SPL06_REG_TEMPERATURE_CFG, SPL06_TEMP_RATE_16HZ | SPL06_TEMP_USE_EXT_SENSOR | SPL06_OVERSAMPLING_TO_REG_VALUE(SPL06_TEMPERATURE_OVERSAMPLING), true);
-    // _dev->write_register(SPL06_REG_TEMPERATURE_CFG, SPL06_TEMP_RATE_16HZ | SPL06_OVERSAMPLING_TO_REG_VALUE(SPL06_TEMPERATURE_OVERSAMPLING), true);
-	_dev->write_register(SPL06_REG_PRESSURE_CFG, SPL06_PRES_RATE_16HZ | SPL06_OVERSAMPLING_TO_REG_VALUE(SPL06_PRESSURE_OVERSAMPLING), true);
+	_dev->write_register(SPL06_REG_TEMPERATURE_CFG, SPL06_MESSURE_RATE_TO_REG_VALUE(SPL06_TEMPERATURE_MEASURE_RATE) |  SPL06_OVERSAMPLING_TO_REG_VALUE(SPL06_TEMPERATURE_OVERSAMPLING) | SPL06_TEMP_USE_EXT_SENSOR , true);    
+	_dev->write_register(SPL06_REG_PRESSURE_CFG, SPL06_MESSURE_RATE_TO_REG_VALUE(SPL06_PRESSURE_MEASURE_RATE) | SPL06_OVERSAMPLING_TO_REG_VALUE(SPL06_PRESSURE_OVERSAMPLING), true);
+
+	//  Manufacturer advised cfg register values for high precision and rate in background mode
+    // _dev->write_register(SPL06_REG_TEMPERATURE_CFG, 0xA0, true);    
+	// _dev->write_register(SPL06_REG_PRESSURE_CFG, 0x26, true);
+
 	//enable background mode
 	_dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_CON_PRE_TEM, true);
 #else
@@ -196,6 +240,16 @@ int32_t AP_Baro_SPL06::raw_value_scale_factor(uint8_t oversampling)
     }
 }
 
+static int32_t get_twos_complement(uint32_t raw, uint8_t length)
+{
+    if (raw & ((int)1 << (length - 1))) {
+        return ((int32_t)raw) - ((int32_t)1 << length);
+    }
+    else {
+        return raw;
+    }
+}
+
 bool AP_Baro_SPL06::get_calib_coeefs(void)
 {
 
@@ -244,14 +298,70 @@ bool AP_Baro_SPL06::get_calib_coeefs(void)
 		break;
 	}
 
+
+    // bool ready = false;
+    // for (uint8_t i=0; i<5; i++) {
+    //     uint8_t status = 0;
+    //     if (_dev->read_registers(SPL06_REG_MODE_AND_STATUS, &status, 1)) {
+    //         if ((status & 1<<7U) && (status & 1<<6U)) {
+    //             ready = true;
+    //             break;
+    //         }
+    //     }
+    //     hal.scheduler->delay_microseconds(100);
+    // }
+
+    // if (!ready) {
+    //     return false;
+    // }
+
+    // uint8_t buf[SPL06_CALIB_COEFFS_LEN];
+
+    // #define READ_LENGTH 9
+
+    // for (uint8_t i = 0; i < SPL06_CALIB_COEFFS_LEN; ) {
+    //     ssize_t chunk = MIN(READ_LENGTH, SPL06_CALIB_COEFFS_LEN - i);
+    //     if (!_dev->read_registers(SPL06_REG_CALIB_COEFFS_START + i, buf + i, chunk)) {
+    //         return false;
+    //     }
+    //     i += chunk;
+    // }
+
+    // // 0x11 c0 [3:0] + 0x10 c0 [11:4]
+    // _c0 = get_twos_complement(((uint32_t)buf[0] << 4) | (((uint32_t)buf[1] >> 4) & 0x0F), 12);
+    // // 0x11 c1 [11:8] + 0x12 c1 [7:0]
+    // _c1 = get_twos_complement((((uint32_t)buf[1] & 0x0F) << 8) | (uint32_t)buf[2], 12);
+    // // 0x13 c00 [19:12] + 0x14 c00 [11:4] + 0x15 c00 [3:0]
+    // _c00 = get_twos_complement(((uint32_t)buf[3] << 12) | ((uint32_t)buf[4] << 4) | (((uint32_t)buf[5] >> 4) & 0x0F), 20);
+    // // 0x15 c10 [19:16] + 0x16 c10 [15:8] + 0x17 c10 [7:0]
+    // _c10 = get_twos_complement((((uint32_t)buf[5] & 0x0F) << 16) | ((uint32_t)buf[6] << 8) | (uint32_t)buf[7], 20);
+    // // 0x18 c01 [15:8] + 0x19 c01 [7:0]
+    // _c01 = get_twos_complement(((uint32_t)buf[8] << 8) | (uint32_t)buf[9], 16);
+    // // 0x1A c11 [15:8] + 0x1B c11 [7:0]
+    // _c11 = get_twos_complement(((uint32_t)buf[10] << 8) | (uint32_t)buf[11], 16);
+    // // 0x1C c20 [15:8] + 0x1D c20 [7:0]
+    // _c20 = get_twos_complement(((uint32_t)buf[12] << 8) | (uint32_t)buf[13], 16);
+    // // 0x1E c21 [15:8] + 0x1F c21 [7:0]
+    // _c21 = get_twos_complement(((uint32_t)buf[14] << 8) | (uint32_t)buf[15], 16);
+    // // 0x20 c30 [15:8] + 0x21 c30 [7:0]
+    // _c30 = get_twos_complement(((uint32_t)buf[16] << 8) | (uint32_t)buf[17], 16);
+
+    // if(type == Type::SPA06) {
+    //     // 0x23 c31 [3:0] + 0x22 c31 [11:4]
+    //     _c31 = get_twos_complement(((uint32_t)buf[18] << 4) | (((uint32_t)buf[19] >> 4) & 0x0F), 12);
+    //     // 0x23 c40 [11:8] + 0x24 c40 [7:0]
+    //     _c40 = get_twos_complement((((uint32_t)buf[19] & 0x0F) << 8) | (uint32_t)buf[20], 12);
+    // }
+
+
     uint8_t buf[SPL06_CALIB_COEFFS_LEN];
     
     _dev->read_registers(SPL06_REG_CALIB_COEFFS_START, buf, sizeof(buf));
 
     _c0 = (buf[0] & 0x80 ? 0xF000 : 0) | ((uint16_t)buf[0] << 4) | (((uint16_t)buf[1] & 0xF0) >> 4);
-    _c1 = ((buf[1] & 0x8 ? 0xF000 : 0) | ((uint16_t)buf[1] & 0x0F) << 8) | (uint16_t)buf[2];
+    _c1 = ((buf[1] & 0x08 ? 0xF000 : 0) | ((uint16_t)buf[1] & 0x0F) << 8) | (uint16_t)buf[2];
     _c00 = (buf[3] & 0x80 ? 0xFFF00000 : 0) | ((uint32_t)buf[3] << 12) | ((uint32_t)buf[4] << 4) | (((uint32_t)buf[5] & 0xF0) >> 4);
-    _c10 = (buf[5] & 0x8 ? 0xFFF00000 : 0) | (((uint32_t)buf[5] & 0x0F) << 16) | ((uint32_t)buf[6] << 8) | (uint32_t)buf[7];
+    _c10 = (buf[5] & 0x08 ? 0xFFF00000 : 0) | (((uint32_t)buf[5] & 0x0F) << 16) | ((uint32_t)buf[6] << 8) | (uint32_t)buf[7];
     _c01 = ((uint16_t)buf[8] << 8) | ((uint16_t)buf[9]);
     _c11 = ((uint16_t)buf[10] << 8) | (uint16_t)buf[11];
     _c20 = ((uint16_t)buf[12] << 8) | (uint16_t)buf[13];
