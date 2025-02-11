@@ -631,7 +631,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(rpm_sensor, "RPM", AP_RPM),
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_RCIN
+#if AP_PERIPH_RCIN_ENABLED
     // @Group: RC
     // @Path: rc_in.cpp
     GOBJECT(g_rcin, "RC",  Parameters_RCIN),
@@ -671,7 +671,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GSCALAR(can_mirror_ports, "CAN_MIRROR_PORTS", 0),
 #endif // HAL_PERIPH_CAN_MIRROR
 
-#ifdef HAL_PERIPH_ENABLE_RTC
+#if AP_PERIPH_RTC_ENABLED
     // @Group: RTC
     // @Path: ../libraries/AP_RTC/AP_RTC.cpp
     GOBJECT(rtc,                   "RTC",    AP_RTC),

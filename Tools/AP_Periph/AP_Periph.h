@@ -34,7 +34,7 @@
 #if HAL_WITH_ESC_TELEM
 #include <AP_ESC_Telem/AP_ESC_Telem.h>
 #endif
-#ifdef HAL_PERIPH_ENABLE_RTC
+#if AP_PERIPH_RTC_ENABLED
 #include <AP_RTC/AP_RTC.h>
 #endif
 #include <AP_RCProtocol/AP_RCProtocol_config.h>
@@ -369,7 +369,7 @@ public:
     void rcout_handle_safety_state(uint8_t safety_state);
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_RCIN
+#if AP_PERIPH_RCIN_ENABLED
     void rcin_init();
     void rcin_update();
     void can_send_RCInput(uint8_t quality, uint16_t *values, uint8_t nvalues, bool in_failsafe, bool quality_valid);
@@ -429,7 +429,7 @@ public:
     Networking_Periph networking_periph;
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_RTC
+#if AP_PERIPH_RTC_ENABLED
     AP_RTC rtc;
 #endif
 
