@@ -73,7 +73,7 @@ void AP_Frsky_D::send(void)
         //send per cell voltages
         for (uint8_t i = 0; i < cells_count; i++) {
             // make it FrSky style (id and volts in 2 bytes)
-            cell_id_voltage = (uint16_t) (0x1000*i+(float)_SPort_data.cells_mvolts[i]/1000/4.2*0x0834); //magic number 0x0834 = 2100 steps per 4.2V            
+            cell_id_voltage = (uint16_t) (0x1000*i+(float)_SPort_data.cells_mvolts[i]/1000/4.2*0x0834); //magic number 0x0834 means 2100 ADC steps per 4.2V            
             // cell_id_voltage = (uint16_t) 0x1000*i+3.85/4.2*0x0834; //magic number 0x0834 = 2100 steps per 4.2V
             cell_id_voltage = (cell_id_voltage >> 8) | (cell_id_voltage << 8); //swap bytes
 
@@ -145,9 +145,9 @@ void AP_Frsky_D::send(void)
         uint8_t inst = 0;
         calc_rpm(inst,_SPort_data.rpm);
         
-        // Baro alt as RPM
-        _SPort_data.rpm = 1000+(uint16_t)AP::baro().get_altitude(); // for testing  1000 is 0m
-        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro:  %0.2f",(double)(_SPort_data.rpm));
+        // Baro alt as RPM (1000 is 0m)
+        _SPort_data.rpm = 1000+(uint16_t)AP::baro().get_altitude(); 
+        // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro:  %0.2f",(double)(_SPort_data.rpm));
 
        
         send_uint16(DATA_ID_RPM, (uint16_t)(_SPort_data.rpm));              
