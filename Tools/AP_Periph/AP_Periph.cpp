@@ -216,7 +216,7 @@ void AP_Periph_FW::init()
     kdecan.init();
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_AIRSPEED
+#if AP_PERIPH_AIRSPEED_ENABLED
 #if (CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS) && (HAL_USE_I2C == TRUE)
     const bool pins_enabled = ChibiOS::I2CBus::check_select_pins(0x01);
     if (pins_enabled) {
@@ -296,7 +296,7 @@ void AP_Periph_FW::init()
     nmea.init();
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_RPM
+#if AP_PERIPH_RPM_ENABLED
     rpm_sensor.init();
 #endif
 
@@ -522,7 +522,7 @@ void AP_Periph_FW::update()
     temperature_sensor.update();
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_RPM
+#if AP_PERIPH_RPM_ENABLED
     if (now - rpm_last_update_ms >= 100) {
         rpm_last_update_ms = now;
         rpm_sensor.update();
