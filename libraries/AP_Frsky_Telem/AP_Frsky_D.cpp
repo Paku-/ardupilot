@@ -12,6 +12,8 @@
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_RCTelemetry/AP_RCTelemetry.h>
 #include <GCS_MAVLink/GCS.h>
+#include <AP_Baro/AP_Baro.h>
+
 
 /*
   send 1 byte and do byte stuffing
