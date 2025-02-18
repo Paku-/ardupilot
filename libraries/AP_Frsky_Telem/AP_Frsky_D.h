@@ -28,7 +28,7 @@ private:
     struct {
         uint32_t last_200ms_frame;
         uint32_t last_1000ms_frame;
-        uint32_t last_5000ms_frame;
+        uint32_t last_2000ms_frame;
     } _D;
 
 };
