@@ -145,9 +145,9 @@ void AP_Frsky_D::send(void)
         uint8_t inst = 0;
         calc_rpm(inst,_SPort_data.rpm);
         
-        // Baro alt as RPM
-        _SPort_data.rpm = 1000+(uint16_t)AP::baro().get_altitude(); // for testing  1000 is 0m
-        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro:  %0.2f",(double)(_SPort_data.rpm));
+        // Baro alt as RPM (1000 is 0m)
+        _SPort_data.rpm = 1000+(uint16_t)AP::baro().get_altitude(); 
+        // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro:  %0.2f",(double)(_SPort_data.rpm));
 
        
         send_uint16(DATA_ID_RPM, (uint16_t)(_SPort_data.rpm));              
