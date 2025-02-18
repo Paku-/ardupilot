@@ -16,6 +16,8 @@
 
 #if AP_BARO_SPL06_ENABLED
 
+#include <GCS_MAVLink/GCS.h>
+
 #include <utility>
 #include <strings.h>
 #include <AP_Math/definitions.h>
@@ -72,19 +74,17 @@ extern const AP_HAL::HAL &hal;
 #define SPL06_TEMPERATURE_RESULT_BIT_SHIFT     (1<<3)  // necessary for temperature oversampling > 8
 
 // Don't set oversampling higher than 8 or the measurement time will be higher than 20ms (timer period)
-#define SPL06_PRESSURE_OVERSAMPLING            4      // 16 is defined as std.
-#define SPL06_TEMPERATURE_OVERSAMPLING         4      // 16 is defined as std.
+#define SPL06_PRESSURE_OVERSAMPLING            8      // 16 is defined as std.
+#define SPL06_TEMPERATURE_OVERSAMPLING         8      // 16 is defined as std.
 
 #define SPL06_OVERSAMPLING_TO_REG_VALUE(n)     (ffs(n)-1)
 
-#define SPL06_BACKGROUND_MODE_POLLING_RATE	   1000000/5
-#define SPL06_COMMAND_MODE_POLLING_RATE	       20 * AP_USEC_PER_MSEC
-
-#define SPL06_COMMAND_MODE_PRESSURE_TEMP_RATIO 2      // 1 temperature measurements for 2 pressure measurement
+#define SPL06_BACKGROUND_MODE_POLLING_RATE	   50 * AP_USEC_PER_MSEC
+#define SPL06_COMMAND_MODE_POLLING_RATE	       50 * AP_USEC_PER_MSEC
 
 // Enable Background Mode for continuous measurement
 #ifndef AP_BARO_SPL06_BACKGROUND_ENABLE
-#define AP_BARO_SPL06_BACKGROUND_ENABLE 0
+#define AP_BARO_SPL06_BACKGROUND_ENABLE 1
 #endif
 
 AP_Baro_SPL06::AP_Baro_SPL06(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> dev)
@@ -217,7 +217,8 @@ bool AP_Baro_SPL06::_init()
 #if AP_BARO_SPL06_BACKGROUND_ENABLE
     _dev->register_periodic_callback(SPL06_BACKGROUND_MODE_POLLING_RATE, FUNCTOR_BIND_MEMBER(&AP_Baro_SPL06::_timer, void));
 #else
-    // _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_TEMPERATURE, false);                      
+    //Start measurements
+    _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_TEMPERATURE, false);                      
     // _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_PRESSURE, false);                                  
     _dev->register_periodic_callback(SPL06_COMMAND_MODE_POLLING_RATE, FUNCTOR_BIND_MEMBER(&AP_Baro_SPL06::_timer, void));    
 #endif //AP_BARO_SPL06_BACKGROUND_ENABLE
@@ -249,74 +250,31 @@ void AP_Baro_SPL06::_timer(void)
 
     _dev->read_registers(SPL06_REG_MODE_AND_STATUS,&meas_cfg, sizeof(meas_cfg));
 
-    //Leave if not ready
+    //Quit if not ready
     if (!((meas_cfg & SPL06_MEAS_CFG_SENSOR_RDY) && (meas_cfg & SPL06_MEAS_CFG_COEFFS_RDY))) {
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: Not ready");
         return;
     }
-
-#if AP_BARO_SPL06_BACKGROUND_ENABLE
-    
-    //background mode
-    
+   
     if (meas_cfg & SPL06_MEAS_CFG_TEMPERATURE_RDY) {
         _dev->read_registers(SPL06_REG_TEMPERATURE_START, buf, sizeof(buf));
 	    _update_temperature((int32_t)((buf[0] & 0x80 ? 0xFF000000 : 0) | ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2]));
-
-    }
         
+        #if !AP_BARO_SPL06_BACKGROUND_ENABLE    
+        _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_PRESSURE, false);                         
+        #endif
+
+    }        
     
     if (meas_cfg & SPL06_MEAS_CFG_PRESSURE_RDY) {
 	    _dev->read_registers(SPL06_REG_PRESSURE_START, buf, sizeof(buf));
 	    _update_pressure((int32_t)((buf[0] & 0x80 ? 0xFF000000 : 0) | ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2]));
-    }
-
-
-#else
-
-    //command mode	
-
-    // if (meas_cfg & SPL06_MEAS_CFG_TEMPERATURE_RDY){
-    //     _dev->read_registers(SPL06_REG_TEMPERATURE_START, buf, sizeof(buf));
-    //     _update_temperature((int32_t)((buf[0] & 0x80 ? 0xFF000000 : 0) | ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2]));
-    //     _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_TEMPERATURE, false);                      
-    // }
-
-    // if (meas_cfg & SPL06_MEAS_CFG_PRESSURE_RDY) {
-    //     _dev->read_registers(SPL06_REG_PRESSURE_START, buf, sizeof(buf));
-    //     _update_pressure((int32_t)((buf[0] & 0x80 ? 0xFF000000 : 0) | ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2]));        
-    //     _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_PRESSURE, false);                                  
-    // }
-
-    if ((_timer_counter == -1)) {
-        // First call, start a temperature measurement 
-        _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_TEMPERATURE, false);
-        _timer_counter = 0; 
-    } else if (!(_timer_counter % SPL06_COMMAND_MODE_PRESSURE_TEMP_RATIO)) {
-        // Read the temperature and start a pressure measurement
-        if (meas_cfg & SPL06_MEAS_CFG_TEMPERATURE_RDY){
-            _dev->read_registers(SPL06_REG_TEMPERATURE_START, buf, sizeof(buf));
-            _update_temperature((int32_t)((buf[0] & 0x80 ? 0xFF000000 : 0) | ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2]));
-            _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_PRESSURE, false);
-            _timer_counter += 1;
-        }
-    } else {
-        if (meas_cfg & SPL06_MEAS_CFG_PRESSURE_RDY) {
-            _dev->read_registers(SPL06_REG_PRESSURE_START, buf, sizeof(buf));
-            _update_pressure((int32_t)((buf[0] & 0x80 ? 0xFF000000 : 0) | ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2]));
-
-            _timer_counter += 1;       
-            // Start whatever is going to be read next
-            if (!(_timer_counter % SPL06_COMMAND_MODE_PRESSURE_TEMP_RATIO)) {
-                _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_TEMPERATURE, false);
-            } else {
-                _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_PRESSURE, false);                
-            }
-
-        }
+        
+        #if !AP_BARO_SPL06_BACKGROUND_ENABLE            
+        _dev->write_register(SPL06_REG_MODE_AND_STATUS, SPL06_MEAS_TEMPERATURE, false);                               
+        #endif
 
     }
-
-#endif //AP_BARO_SPL06_BACKGROUND_ENABLE
 
     _dev->check_next_register();
 }
@@ -370,6 +328,7 @@ void AP_Baro_SPL06::_update_pressure(int32_t press_raw)
     const float press_comp = pressure_cal + press_temp_comp;
 
     if (!pressure_ok(press_comp)) {
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: Pressure out of range");
         return;
     }
 
