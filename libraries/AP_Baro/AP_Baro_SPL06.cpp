@@ -313,6 +313,8 @@ void AP_Baro_SPL06::update(void)
 
     _copy_to_frontend(_instance, _pressure_sum/_pressure_count, _temperature);
 
+    // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: Measurements count: %f",(double)(_pressure_count));
+
     _pressure_sum = 0;
     _pressure_count = 0;
 }
