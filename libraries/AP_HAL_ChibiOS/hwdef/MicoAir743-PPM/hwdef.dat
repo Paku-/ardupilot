@@ -2,7 +2,7 @@
 # for the MicoAir743 hardware
 #
 # Paku mods
-# - PPM on USART1_RX
+# - PPM on USART6_RX
 # - some modules excluded
 # - BUZZer GPIO 54
 
