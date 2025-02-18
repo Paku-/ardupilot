@@ -86,25 +86,40 @@ protected:
     // FrSky sensor hub data IDs
     static const uint8_t DATA_ID_GPS_ALT_BP        = 0x01;
     static const uint8_t DATA_ID_TEMP1             = 0x02;
+    static const uint8_t DATA_ID_RPM               = 0x03; 
     static const uint8_t DATA_ID_FUEL              = 0x04;
     static const uint8_t DATA_ID_TEMP2             = 0x05;
+    static const uint8_t DATA_ID_VOLTS             = 0x06; //0,01-4.2V  4bit cell No, other 12bits in decimal 0-2100 range are 0-4.2V range
     static const uint8_t DATA_ID_GPS_ALT_AP        = 0x09;
     static const uint8_t DATA_ID_BARO_ALT_BP       = 0x10;
     static const uint8_t DATA_ID_GPS_SPEED_BP      = 0x11;
     static const uint8_t DATA_ID_GPS_LONG_BP       = 0x12;
     static const uint8_t DATA_ID_GPS_LAT_BP        = 0x13;
     static const uint8_t DATA_ID_GPS_COURS_BP      = 0x14;
+    static const uint8_t DATA_ID_DAY_MONTH         = 0x15;
+    static const uint8_t DATA_ID_YEAR_0            = 0x16; //1B: years from 2000    2B:0
+    static const uint8_t DATA_ID_HOURS_MINUTE      = 0x17; //1B: hours              2B:minutes
+    static const uint8_t DATA_ID_SECONDS_0         = 0x18; //1B: seconds            2B:0
     static const uint8_t DATA_ID_GPS_SPEED_AP      = 0x19;
     static const uint8_t DATA_ID_GPS_LONG_AP       = 0x1A;
     static const uint8_t DATA_ID_GPS_LAT_AP        = 0x1B;
     static const uint8_t DATA_ID_BARO_ALT_AP       = 0x21;
     static const uint8_t DATA_ID_GPS_LONG_EW       = 0x22;
     static const uint8_t DATA_ID_GPS_LAT_NS        = 0x23;
+    static const uint8_t DATA_ID_ACC_X             = 0x24;
+    static const uint8_t DATA_ID_ACC_Y             = 0x25;
+    static const uint8_t DATA_ID_ACC_Z             = 0x26;
     static const uint8_t DATA_ID_CURRENT           = 0x28;
     static const uint8_t DATA_ID_VFAS              = 0x39;
 
+    static const uint8_t DATA_VOLTAGE_BP           = 0x3A; //0,5-48V  1B:voltage 2B:0
+    static const uint8_t DATA_VOLTAGE_AP           = 0x3B; //         1B:voltage 2B:0   
+    static const uint8_t DATA_CURRENT              = 0x3B; //0,1-100A
+
     static const uint8_t START_STOP_D              = 0x5E;
     static const uint8_t BYTESTUFF_D               = 0x5D;
+
+
 
     /*
       for FrSky X protocol (X-receivers)

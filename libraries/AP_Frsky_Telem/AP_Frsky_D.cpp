@@ -2,10 +2,12 @@
 
 #if AP_FRSKY_D_TELEM_ENABLED
 
+#include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_GPS/AP_GPS.h>
 #include <GCS_MAVLink/GCS.h>
+
 
 /*
   send 1 byte and do byte stuffing
@@ -83,6 +85,33 @@ void AP_Frsky_D::send(void)
             send_uint16(DATA_ID_GPS_ALT_AP, _SPort_data.alt_gps_cm); // send gps altitude decimal part
         }
     }
+
+    // send frame3 every 5 seconds
+
+    const AP_Vehicle *vehicle = AP::vehicle();
+    
+    if ((vehicle != nullptr) && vehicle->get_time_flying_ms() && (now - _D.last_5000ms_frame >= 5000)) {
+        
+        _D.last_5000ms_frame = now;
+        
+        uint32_t time_flying_s = vehicle->get_time_flying_ms()/1000;                
+        
+        uint8_t time_flying_h = (uint8_t)time_flying_s/3600;                // time since arming - hours
+        uint8_t time_flying_m = (uint8_t)(time_flying_s % 3600)/60;         // minutes        
+        time_flying_s = (uint8_t)time_flying_s % 60;                // seconds
+        
+        send_uint16(DATA_ID_DAY_MONTH, (uint16_t)(0x0101));       // 01.01        
+        send_uint16(DATA_ID_YEAR_0, (uint16_t)(0x01));            // 2001
+        send_uint16(DATA_ID_HOURS_MINUTE, (uint16_t)(time_flying_m*0xFF+time_flying_h)); // send hours & mins       
+        send_uint16(DATA_ID_SECONDS_0, (uint16_t)(time_flying_s)); // send hours & mins       
+
+        
+    }
+
+
+        
+
+
 }
 
 #endif  // AP_FRSKY_D_TELEM_ENABLED
