@@ -39,9 +39,7 @@ void AP_Frsky_D::send_uint16(uint16_t id, uint16_t data)
 }
 
 /*
- * send frame1 and frame2 telemetry data
- * one frame (frame1) is sent every 200ms with baro alt, nb sats, batt volts and amp, control_mode
- * a second frame (frame2) is sent every second (1000ms) with gps position data, and ahrs.yaw_sensor heading (instead of GPS heading)
+ * send frame1/2/3 telemetry data
  * for FrSky D protocol (D-receivers)
  */
 void AP_Frsky_D::send(void)
@@ -80,9 +78,9 @@ void AP_Frsky_D::send(void)
         // }
         // send_uint16(DATA_ID_CURRENT, (uint16_t)roundf(current * 10.0f)); // send current consumption
         
-        send_uint16(DATA_ID_CURRENT, (uint16_t)(20));      
-        send_uint16(DATA_ID_VOLTAGE_BP, (uint16_t)(10));   
-        send_uint16(DATA_ID_VOLTAGE_AP, (uint16_t)(30));   
+        send_uint16(DATA_ID_CURRENT, (uint16_t)(10) );      
+        send_uint16(DATA_ID_VOLTAGE_BP, (uint16_t)(5));   // 
+        send_uint16(DATA_ID_VOLTAGE_AP, (uint16_t)(4));   // Has to be less 10 or will be added to BP
         
         //end FRAME1 data
         
@@ -150,7 +148,7 @@ void AP_Frsky_D::send(void)
         send_uint16(DATA_ID_SECONDS_0, (uint16_t)(time_flying_s));                              // seconds
 
        
-        send_uint16(DATA_ID_RPM, (uint16_t)(0xFFFF));              
+        send_uint16(DATA_ID_RPM, (uint16_t)(1000));              
         
     }
 

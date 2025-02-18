@@ -114,8 +114,8 @@ protected:
     static const uint8_t DATA_ID_VFAS              = 0x39;
     
     //voltage and current sensor
-    static const uint8_t DATA_ID_VOLTAGE_BP           = 0x3A; //0,5-48V  1B:voltage 2B:0
-    static const uint8_t DATA_ID_VOLTAGE_AP           = 0x3B; //         1B:voltage 2B:0   
+    static const uint8_t DATA_ID_VOLTAGE_BP           = 0x3A; //0,5-48V  
+    static const uint8_t DATA_ID_VOLTAGE_AP           = 0x3B; // voltage used to calculate watts only
     static const uint8_t DATA_ID_CURRENT              = 0x28; //0,1-100A
 
     static const uint8_t START_STOP_D              = 0x5E;
