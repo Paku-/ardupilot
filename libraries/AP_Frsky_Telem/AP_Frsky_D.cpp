@@ -148,13 +148,14 @@ void AP_Frsky_D::send(void)
         send_uint16(DATA_ID_HOURS_MINUTE, (uint16_t)((_SPort_data.minutes << 8) | _SPort_data.hours));    // send hours & mins       
         send_uint16(DATA_ID_SECONDS_0, (uint16_t)(_SPort_data.seconds));                                  // seconds
 
-        // uint8_t inst = 0;
-        // calc_rpm(inst,_SPort_data.rpm);
-
-        // const auto &baro = AP::baro();
-        _SPort_data.rpm = (uint16_t)AP::baro().get_altitude(); // for testing     
+        uint8_t inst = 0;
+        calc_rpm(inst,_SPort_data.rpm);
+        
+        // Baro alt as RPM
+        _SPort_data.rpm = 1000+(uint16_t)AP::baro().get_altitude(); // for testing  1000 is 0m
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Baro:  %0.2f",(double)(_SPort_data.rpm));
-                
+
+       
         send_uint16(DATA_ID_RPM, (uint16_t)(_SPort_data.rpm));              
         
     }
