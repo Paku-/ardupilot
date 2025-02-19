@@ -668,7 +668,7 @@ private:
     int32_t nav_pitch_cd;
 
     // the aerodynamic load factor. This is calculated from the demanded
-    // roll before the roll is clipped, using 1/sqrt(cos(nav_roll))
+    // roll before the roll is clipped, using 1/cos(nav_roll)
     float aerodynamic_load_factor = 1.0f;
 
     // a smoothed airspeed estimate, used for limiting roll angle
@@ -1124,7 +1124,7 @@ private:
 #endif
 
     // system.cpp
-    void init_ardupilot() override;
+    __INITFUNC__ void init_ardupilot() override;
     bool set_mode(Mode& new_mode, const ModeReason reason);
     bool set_mode(const uint8_t mode, const ModeReason reason) override;
     bool set_mode_by_number(const Mode::Number new_mode_number, const ModeReason reason);
