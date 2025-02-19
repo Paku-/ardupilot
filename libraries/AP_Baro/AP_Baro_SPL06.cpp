@@ -233,16 +233,16 @@ int32_t AP_Baro_SPL06::raw_value_scale_factor(uint8_t oversampling)
         default: return -1; // invalid
     }
 }
-
-static int32_t get_twos_complement(uint32_t raw, uint8_t length)
-{
-    if (raw & ((int)1 << (length - 1))) {
-        return ((int32_t)raw) - ((int32_t)1 << length);
-    }
-    else {
-        return raw;
-    }
-}
+//// alternate way to refactor 3 bytes to 4 bytes integers
+// static int32_t get_twos_complement(uint32_t raw, uint8_t length)
+// {
+//     if (raw & ((int)1 << (length - 1))) {
+//         return ((int32_t)raw) - ((int32_t)1 << length);
+//     }
+//     else {
+//         return raw;
+//     }
+// }
 
 bool AP_Baro_SPL06::get_calib_coeefs(void)
 {
