@@ -139,7 +139,7 @@ public:
 #endif
 
 
-#ifdef HAL_PERIPH_ENABLE_ADSB
+#if AP_PERIPH_ADSB_ENABLED
     AP_Int32 adsb_baudrate;
     AP_Int8 adsb_port;
 #endif
@@ -149,7 +149,7 @@ public:
     AP_Int8 hardpoint_rate;
 #endif
 
-#if defined(HAL_PERIPH_ENABLE_HWESC) || defined(HAL_PERIPH_ENABLE_ESC_APD)
+#if AP_PERIPH_HOBBYWING_ESC_ENABLED || defined(HAL_PERIPH_ENABLE_ESC_APD)
     #if defined ESC_NUMBERS
         #error "ESC_NUMBERS should not have been previously defined"
     #endif
@@ -208,7 +208,7 @@ public:
     AP_Int32 battery_hide_mask;
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_EFI
+#if AP_PERIPH_EFI_ENABLED
     AP_Int32 efi_baudrate;
     AP_Int8 efi_port;
 #endif

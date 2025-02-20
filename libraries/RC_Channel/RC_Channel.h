@@ -262,6 +262,7 @@ public:
         AUTOTUNE_TEST_GAINS = 180, // auto tune tuning switch to test or revert gains
         QUICKTUNE =          181,  //quicktune 3 position switch
         AHRS_AUTO_TRIM =     182,  // in-flight trim Copter AHRS using manual levelling
+        AUTOLAND =           183,  //Fixed Wing AUTOLAND Mode
 
         // inputs from 200 will eventually used to replace RCMAP
         ROLL =               201, // roll input
@@ -364,7 +365,7 @@ public:
 
 protected:
 
-    virtual void init_aux_function(AUX_FUNC ch_option, AuxSwitchPos);
+    __INITFUNC__ virtual void init_aux_function(AUX_FUNC ch_option, AuxSwitchPos);
 
     // virtual function to be overridden my subclasses
     virtual bool do_aux_function(const AuxFuncTrigger &trigger);
@@ -473,7 +474,7 @@ public:
     // constructor
     RC_Channels(void);
 
-    void init(void);
+    __INITFUNC__ void init(void);
 
     // get singleton instance
     static RC_Channels *get_singleton() {

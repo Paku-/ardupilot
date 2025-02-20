@@ -960,12 +960,12 @@ class sitl_periph_universal(sitl_periph):
             AP_PERIPH_RANGEFINDER_ENABLED = 1,
             AP_PERIPH_BATTERY_ENABLED = 1,
             AP_PERIPH_BATTERY_BALANCE_ENABLED = 0,
-            HAL_PERIPH_ENABLE_EFI = 1,
+            AP_PERIPH_EFI_ENABLED = 1,
             AP_PERIPH_RPM_ENABLED = 1,
             AP_PERIPH_RPM_STREAM_ENABLED = 1,
             AP_RPM_STREAM_ENABLED = 1,
             HAL_PERIPH_ENABLE_RC_OUT = 1,
-            HAL_PERIPH_ENABLE_ADSB = 1,
+            AP_PERIPH_ADSB_ENABLED = 1,
             HAL_PERIPH_ENABLE_SERIAL_OPTIONS = 1,
             AP_AIRSPEED_ENABLED = 1,
             AP_BATTERY_ESC_ENABLED = 1,
@@ -974,8 +974,11 @@ class sitl_periph_universal(sitl_periph):
             AP_EXTENDED_ESC_TELEM_ENABLED = 1,
             AP_TERRAIN_AVAILABLE = 1,
             HAL_GYROFFT_ENABLED = 0,
+            AP_PERIPH_HOBBYWING_ESC_ENABLED = 0,
             AP_PERIPH_RTC_ENABLED = 0,
             AP_PERIPH_RCIN_ENABLED = 0,
+            AP_PERIPH_NETWORKING_ENABLED = 0,
+            AP_PERIPH_NOTIFY_ENABLED = 0,
         )
 
 class sitl_periph_gps(sitl_periph):
@@ -989,17 +992,22 @@ class sitl_periph_gps(sitl_periph):
             APJ_BOARD_ID = 101,
 
             AP_PERIPH_BATTERY_ENABLED = 0,
+            AP_PERIPH_ADSB_ENABLED = 0,
             AP_PERIPH_GPS_ENABLED = 1,
             AP_PERIPH_IMU_ENABLED = 0,
             AP_PERIPH_MAG_ENABLED = 0,
             AP_PERIPH_BATTERY_BALANCE_ENABLED = 0,
             AP_PERIPH_BARO_ENABLED = 0,
+            AP_PERIPH_EFI_ENABLED = 0,
             AP_PERIPH_RANGEFINDER_ENABLED = 0,
             AP_PERIPH_RTC_ENABLED = 0,
             AP_PERIPH_RCIN_ENABLED = 0,
             AP_PERIPH_RPM_ENABLED = 0,
             AP_PERIPH_RPM_STREAM_ENABLED = 0,
             AP_PERIPH_AIRSPEED_ENABLED = 0,
+            AP_PERIPH_HOBBYWING_ESC_ENABLED = 0,
+            AP_PERIPH_NETWORKING_ENABLED = 0,
+            AP_PERIPH_NOTIFY_ENABLED = 0,
         )
 
 class sitl_periph_battmon(sitl_periph):
@@ -1014,16 +1022,21 @@ class sitl_periph_battmon(sitl_periph):
 
             AP_PERIPH_BATTERY_ENABLED = 1,
             AP_PERIPH_BATTERY_BALANCE_ENABLED = 0,
+            AP_PERIPH_ADSB_ENABLED = 0,
             AP_PERIPH_BARO_ENABLED = 0,
             AP_PERIPH_RANGEFINDER_ENABLED = 0,
             AP_PERIPH_GPS_ENABLED = 0,
             AP_PERIPH_IMU_ENABLED = 0,
             AP_PERIPH_MAG_ENABLED = 0,
+            AP_PERIPH_EFI_ENABLED = 0,
             AP_PERIPH_RTC_ENABLED = 0,
             AP_PERIPH_RCIN_ENABLED = 0,
             AP_PERIPH_RPM_ENABLED = 0,
             AP_PERIPH_RPM_STREAM_ENABLED = 0,
             AP_PERIPH_AIRSPEED_ENABLED = 0,
+            AP_PERIPH_HOBBYWING_ESC_ENABLED = 0,
+            AP_PERIPH_NETWORKING_ENABLED = 0,
+            AP_PERIPH_NOTIFY_ENABLED = 0,
         )
 
 class esp32(Board):
@@ -1395,9 +1408,13 @@ class linux(Board):
             self.with_can = False
 
     def configure_env(self, cfg, env):
+        if hasattr(self, 'hwdef'):
+            cfg.env.HWDEF = self.hwdef
         if cfg.options.board == 'linux':
             self.with_can = True
         super(linux, self).configure_env(cfg, env)
+
+        cfg.load('linux')
 
         env.BOARD_CLASS = "LINUX"
 
@@ -1467,8 +1484,18 @@ class linux(Board):
                 HAL_PARAM_DEFAULTS_PATH='"@ROMFS/defaults.parm"',
             )
 
+    def pre_build(self, bld):
+        '''pre-build hook that gets called before dynamic sources'''
+        from waflib.Context import load_tool
+        module = load_tool('linux', [], with_sys_path=True)
+        fun = getattr(module, 'pre_build', None)
+        if fun:
+            fun(bld)
+        super(linux, self).pre_build(bld)
+
     def build(self, bld):
         super(linux, self).build(bld)
+        bld.load('linux')
         if bld.options.upload:
             waflib.Options.commands.append('rsync')
             # Avoid infinite recursion

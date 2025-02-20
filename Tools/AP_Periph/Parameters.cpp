@@ -355,7 +355,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(rangefinder, "RNGFND", RangeFinder),
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_ADSB
+#if AP_PERIPH_ADSB_ENABLED
     // @Param: ADSB_BAUDRATE
     // @DisplayName: ADSB serial baudrate
     // @Description: ADSB serial baudrate.
@@ -392,7 +392,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GSCALAR(hardpoint_rate, "HARDPOINT_RATE", 100),
 #endif
 
-#if defined(HAL_PERIPH_ENABLE_HWESC) || defined(HAL_PERIPH_ENABLE_ESC_APD)
+#if AP_PERIPH_HOBBYWING_ESC_ENABLED || defined(HAL_PERIPH_ENABLE_ESC_APD)
     // @Param: ESC_NUMBER
     // @DisplayName: ESC number
     // @Description: This is the ESC number to report as in UAVCAN ESC telemetry feedback packets.
@@ -472,7 +472,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GSCALAR(msp_port, "MSP_PORT", AP_PERIPH_MSP_PORT_DEFAULT),
 #endif
     
-#ifdef HAL_PERIPH_ENABLE_NOTIFY
+#if AP_PERIPH_NOTIFY_ENABLED
     // @Group: NTF_
     // @Path: ../libraries/AP_Notify/AP_Notify.cpp
     GOBJECT(notify, "NTF_",  AP_Notify),
@@ -518,7 +518,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(node_stats, "STAT", AP_Stats),
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_EFI
+#if AP_PERIPH_EFI_ENABLED
     // @Param: EFI_BAUDRATE
     // @DisplayName: EFI serial baudrate
     // @Description: EFI  serial baudrate.
@@ -619,7 +619,7 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
   #endif
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_NETWORKING
+#if AP_PERIPH_NETWORKING_ENABLED
     // @Group: NET_
     // @Path: networking.cpp
     GOBJECT(networking_periph, "NET_", Networking_Periph),

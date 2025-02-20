@@ -160,6 +160,9 @@
  * sanity checks that hwdefs are up-to-date in terms of how they are
  * trying to configure the peripheral:
  */
+#ifdef HAL_PERIPH_ENABLE_NOTIFY
+#error "Change 'define HAL_PERIPH_ENABLE_NOTIFY' to 'define AP_PERIPH_NOTIFY_ENABLED 1'"
+#endif
 #ifdef HAL_PERIPH_ENABLE_GPS
 #error "Change 'define HAL_PERIPH_ENABLE_GPS' to 'define AP_PERIPH_GPS_ENABLED 1'"
 #endif
@@ -181,11 +184,17 @@
 #ifdef HAL_PERIPH_ENABLE_RANGEFINDER
 #error "Change 'define HAL_PERIPH_ENABLE_RANGEFINDER' to 'define AP_PERIPH_RANGEFINDER_ENABLED 1'"
 #endif
+#ifdef HAL_PERIPH_ENABLE_EFI
+#error "Change 'define AP_PERIPH_EFI_ENABLED' to 'define AP_PERIPH_EFI_ENABLED 1'"
+#endif
 #ifdef HAL_PERIPH_ENABLE_IMU
 #error "Change 'define HAL_PERIPH_ENABLE_IMU' to 'define AP_PERIPH_IMU_ENABLED 1'"
 #endif
 #ifdef HAL_PERIPH_ENABLE_RTC
 #error "Change 'define HAL_PERIPH_ENABLE_RTC' to 'define AP_PERIPH_RTC_ENABLED 1'"
+#endif
+#ifdef HAL_PERIPH_ENABLE_ADSB
+#error "Change 'define HAL_PERIPH_ENABLE_ADSB' to 'define AP_PERIPH_ADSB_ENABLED 1'"
 #endif
 #ifdef HAL_PERIPH_ENABLE_RCIN
 #error "Change 'define HAL_PERIPH_ENABLE_RCIN' to 'define AP_PERIPH_RCIN_ENABLED 1'"
@@ -199,10 +208,19 @@
 #ifdef HAL_PERIPH_ENABLE_AIRSPEED
 #error "Change 'define HAL_PERIPH_ENABLE_AIRSPEED' to 'define AP_PERIPH_AIRSPEED_ENABLED 1'"
 #endif
+#ifdef HAL_PERIPH_ENABLE_HWESC
+#error "Change 'define HAL_PERIPH_ENABLE_HWESC' to 'define AP_PERIPH_HOBBYWING_ESC_ENABLED 1'"
+#endif
+#ifdef HAL_PERIPH_ENABLE_NETWORKING
+#error "Change 'define HAL_PERIPH_ENABLE_NETWORKING' to 'define AP_PERIPH_NETWORKING_ENABLED 1'"
+#endif
 
 /*
  * defaults for various AP_Periph features:
  */
+#ifndef AP_PERIPH_NOTIFY_ENABLED
+#define AP_PERIPH_NOTIFY_ENABLED 0
+#endif
 #ifndef AP_PERIPH_BATTERY_ENABLED
 #define AP_PERIPH_BATTERY_ENABLED 0
 #endif
@@ -215,6 +233,9 @@
 #ifndef AP_PERIPH_AHRS_ENABLED
 #define AP_PERIPH_AHRS_ENABLED 0
 #endif
+#ifndef AP_PERIPH_ADSB_ENABLED
+#define AP_PERIPH_ADSB_ENABLED 0
+#endif
 #ifndef AP_PERIPH_MAG_ENABLED
 #define AP_PERIPH_MAG_ENABLED 0
 #endif
@@ -226,6 +247,9 @@
 #endif
 #ifndef AP_PERIPH_IMU_ENABLED
 #define AP_PERIPH_IMU_ENABLED 0
+#endif
+#ifndef AP_PERIPH_EFI_ENABLED
+#define AP_PERIPH_EFI_ENABLED 0
 #endif
 #ifndef AP_PERIPH_RTC_ENABLED
 #define AP_PERIPH_RTC_ENABLED 0
@@ -241,6 +265,12 @@
 #endif
 #ifndef AP_PERIPH_AIRSPEED_ENABLED
 #define AP_PERIPH_AIRSPEED_ENABLED 0
+#endif
+#ifndef AP_PERIPH_HOBBYWING_ESC_ENABLED
+#define AP_PERIPH_HOBBYWING_ESC_ENABLED 0
+#endif
+#ifndef AP_PERIPH_NETWORKING_ENABLED
+#define AP_PERIPH_NETWORKING_ENABLED 0
 #endif
 
 /*
@@ -474,7 +504,7 @@
 #endif
 
 #ifndef HAL_MAVLINK_BINDINGS_ENABLED
-#define HAL_MAVLINK_BINDINGS_ENABLED defined(HAL_PERIPH_ENABLE_ADSB) || HAL_GCS_ENABLED
+#define HAL_MAVLINK_BINDINGS_ENABLED AP_PERIPH_ADSB_ENABLED || HAL_GCS_ENABLED
 #endif
 
 // for boards other than AP_Periph we are always expecting delays when

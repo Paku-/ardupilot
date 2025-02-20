@@ -77,18 +77,18 @@
 #define AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_NOTIFY
+#if AP_PERIPH_NOTIFY_ENABLED
     #if !defined(HAL_PERIPH_ENABLE_RC_OUT) && !defined(HAL_PERIPH_NOTIFY_WITHOUT_RCOUT)
-        #error "HAL_PERIPH_ENABLE_NOTIFY requires HAL_PERIPH_ENABLE_RC_OUT"
+        #error "AP_PERIPH_NOTIFY_ENABLED requires HAL_PERIPH_ENABLE_RC_OUT"
     #endif
     #ifdef HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY
-        #error "You cannot enable HAL_PERIPH_ENABLE_NOTIFY and HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY at the same time. Notify already includes it"
+        #error "You cannot enable AP_PERIPH_NOTIFY_ENABLED and HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY at the same time. Notify already includes it"
     #endif
     #ifdef AP_PERIPH_HAVE_LED_WITHOUT_NOTIFY
-        #error "You cannot enable HAL_PERIPH_ENABLE_NOTIFY and any HAL_PERIPH_ENABLE_<device>_LED_WITHOUT_NOTIFY at the same time. Notify already includes them all"
+        #error "You cannot enable AP_PERIPH_NOTIFY_ENABLED and any HAL_PERIPH_ENABLE_<device>_LED_WITHOUT_NOTIFY at the same time. Notify already includes them all"
     #endif
     #ifdef HAL_PERIPH_NEOPIXEL_CHAN_WITHOUT_NOTIFY
-        #error "You cannot use HAL_PERIPH_ENABLE_NOTIFY and HAL_PERIPH_NEOPIXEL_CHAN_WITHOUT_NOTIFY at the same time. Notify already includes it. Set param OUTx_FUNCTION=120"
+        #error "You cannot use AP_PERIPH_NOTIFY_ENABLED and HAL_PERIPH_NEOPIXEL_CHAN_WITHOUT_NOTIFY at the same time. Notify already includes it. Set param OUTx_FUNCTION=120"
     #endif
 #endif
 
@@ -192,7 +192,7 @@ public:
     void prepare_reboot();
     bool canfdout() const { return (g.can_fdmode == 1); }
 
-#ifdef HAL_PERIPH_ENABLE_EFI
+#if AP_PERIPH_EFI_ENABLED
     void can_efi_update();
 #endif
 
@@ -283,7 +283,7 @@ public:
     void send_msp_airspeed(void);
 #endif
     
-#ifdef HAL_PERIPH_ENABLE_ADSB
+#if AP_PERIPH_ADSB_ENABLED
     void adsb_init();
     void adsb_update();
     void can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg);
@@ -321,12 +321,12 @@ public:
     } pwm_hardpoint;
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_HWESC
+#if AP_PERIPH_HOBBYWING_ESC_ENABLED
     HWESC_Telem hwesc_telem;
     void hwesc_telem_update();
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_EFI
+#if AP_PERIPH_EFI_ENABLED
     AP_EFI efi;
     uint32_t efi_update_ms;
 #endif
@@ -397,10 +397,10 @@ public:
 #endif
 #endif
 
-#if defined(HAL_PERIPH_ENABLE_NOTIFY) || defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY)
+#if AP_PERIPH_NOTIFY_ENABLED || defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY)
     void update_rainbow();
 #endif
-#ifdef HAL_PERIPH_ENABLE_NOTIFY
+#if AP_PERIPH_NOTIFY_ENABLED
     // notification object for LEDs, buzzers etc
     AP_Notify notify;
     uint64_t vehicle_state = 1; // default to initialisation
@@ -425,7 +425,7 @@ public:
     AP_Logger logger;
 #endif
 
-#ifdef HAL_PERIPH_ENABLE_NETWORKING
+#if AP_PERIPH_NETWORKING_ENABLED
     Networking_Periph networking_periph;
 #endif
 
@@ -446,7 +446,7 @@ public:
 
     static const AP_Param::Info var_info[];
 
-#ifdef HAL_PERIPH_ENABLE_EFI
+#if AP_PERIPH_EFI_ENABLED
     uint32_t last_efi_update_ms;
 #endif
 #if AP_PERIPH_MAG_ENABLED
